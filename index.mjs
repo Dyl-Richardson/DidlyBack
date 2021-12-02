@@ -1,104 +1,119 @@
 import SQLite from "sqlite-async";
 
-async function getAllEvent() {
-    // Create a connection to the db
-    const db = await SQLite.open("./db/database");
+export const events = []
 
-    // Create an SQL query
-    const allEvent = await db.all(
-        // "SELECT event_name, event_author, event_description, event_dates, attendee, available FROM event NATURAL JOIN event_date, event_attendees"
-        "SELECT * FROM event_attendees"
-    );
+async function getAllEvents(){
+    const db = await SQLite.open('./db/database')
+  
+    const allEvents = await db.all(`SELECT * FROM events`)
+  
+    for (const event of allEvents) {
+      const dates = await db.all(`SELECT event_date AS date, id FROM dates_by_event WHERE event_id=?`, [event.id])
+      event.dates = dates
+  
+      for(const date of dates){
+        const attendees = await db.all(`SELECT attendee, available FROM attendees_by_date WHERE date_id=?`, [date.id])
+        date.attendees = attendees
+      }
+    }
+  
+    // console.log(JSON.stringify(allEvents, null, 2))
+    events.push(JSON.stringify(allEvents))
+    console.log(events);
+    db.close()
+  
+    return allEvents
+  }
+  getAllEvents()
 
-    console.log(allEvent);
-
-    // When the transaction is over, we close the connection to the DB
-    db.close();
-
-    return allEvent;
-}
-
-// getAllEvent()
+// !----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 async function getEventById(id) {
-    // Create a connection to the db
     const db = await SQLite.open("./db/database");
 
-    // Create an SQL query
     const eventId = await db.all(
-        "SELECT * FROM event WHERE id = ? ", [id]
+        "SELECT * FROM events WHERE id = ? ", [id]
     )
 
     console.log(eventId);
-
-    // When the transaction is over, we close the connection to the DB
     db.close();
-
     return eventId;
 }
-
 // getEventById(1)
+// !----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 async function addDateToEvent(id, date) {
-    // Create a connection to the db
     const db = await SQLite.open("./db/database");
 
-    // Create an SQL query
-    const addEvent = await db.exec(
-        "INSERT INTO event_date (event_id, event_dates) VALUES (event_id = ?, event_date = ?)", [id], [date]
+    console.log(id, date);
+
+    const addDate = await db.run(
+        "INSERT INTO dates_by_event (event_id, event_date) VALUES (?, ?)", [id, date]
+    );
+
+    console.log(addDate);
+    db.close();
+    return addDate;
+}
+// addDateToEvent(1, '2021-12-05')
+// !----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+async function addAttendeeToEvent(id, attendee, available) {
+    const db = await SQLite.open("./db/database");
+
+    const eventId = await db.all(
+            "INSERT INTO attendees_by_date(date_id, attendee, available) VALUES (?, ?, ?)", [id, attendee, available]
     )
 
-    console.log(addEvent);
-
-    // When the transaction is over, we close the connection to the DB
+    console.log(eventId);
     db.close();
-
-    return addEvent;
+    return eventId;
 }
+// addAttendeeToEvent(1, 'test', 0)
+// getAllEvent()
+// !----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-addDateToEvent(1, "2021-12-04")
-
-async function addAttendeeToEvent() {
-    // Create a connection to the db
+async function deleteDate(date) {
     const db = await SQLite.open("./db/database");
 
-    // Create an SQL query
-    const eventId = await db.all()
+    const eventId = await db.all(
+            "DELETE FROM dates_by_event WHERE event_date = ?", [date]
+    )
 
     console.log(eventId);
-
-    // When the transaction is over, we close the connection to the DB
     db.close();
+    return eventId;
+}
+// deleteDate('2021-12-05')
+// getAllEvent()
+// !----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+async function deleteEvent(id) {
+    const db = await SQLite.open("./db/database");
+
+    const eventId = await db.all(
+            "DELETE FROM events WHERE id = ?", [id]
+    )
+
+    console.log(eventId);
+    db.close();
+    return eventId;
+}
+// deleteEvent(3)
+// getAllEvent()
+// !----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+async function editEvent(name, oldName) {
+    const db = await SQLite.open("./db/database");
+
+    const eventId = await db.all(
+        "UPDATE events SET event_name = ? WHERE event_name = ?", [name, oldName]
+    )
+
+    console.log(eventId);
+    db.close();
     return eventId;
 }
 
-async function deleteEvent() {
-    // Create a connection to the db
-    const db = await SQLite.open("./db/database");
-
-    // Create an SQL query
-    const eventId = await db.all()
-
-    console.log(eventId);
-
-    // When the transaction is over, we close the connection to the DB
-    db.close();
-
-    return eventId;
-}
-
-async function editEvent() {
-    // Create a connection to the db
-    const db = await SQLite.open("./db/database");
-
-    // Create an SQL query
-    const eventId = await db.all()
-
-    console.log(eventId);
-
-    // When the transaction is over, we close the connection to the DB
-    db.close();
-
-    return eventId;
-}
+// editEvent('test update')
+// getAllEvent()
