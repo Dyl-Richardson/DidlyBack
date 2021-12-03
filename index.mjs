@@ -1,30 +1,29 @@
 import SQLite from "sqlite-async";
 
-export const events = []
+export let events = ""
 
-async function getAllEvents(){
+async function getAllEvents() {
     const db = await SQLite.open('./db/database')
-  
+
     const allEvents = await db.all(`SELECT * FROM events`)
-  
+
     for (const event of allEvents) {
-      const dates = await db.all(`SELECT event_date AS date, id FROM dates_by_event WHERE event_id=?`, [event.id])
-      event.dates = dates
-  
-      for(const date of dates){
-        const attendees = await db.all(`SELECT attendee, available FROM attendees_by_date WHERE date_id=?`, [date.id])
-        date.attendees = attendees
-      }
+        const dates = await db.all(`SELECT event_date AS date, id FROM dates_by_event WHERE event_id=?`, [event.id])
+        event.dates = dates
+
+        for (const date of dates) {
+            const attendees = await db.all(`SELECT attendee, available FROM attendees_by_date WHERE date_id=?`, [date.id])
+            date.attendees = attendees
+        }
     }
-  
-    // console.log(JSON.stringify(allEvents, null, 2))
-    events.push(JSON.stringify(allEvents))
+
+    events = allEvents
     console.log(events);
     db.close()
-  
+
     return allEvents
-  }
-  getAllEvents()
+}
+getAllEvents()
 
 // !----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -62,7 +61,7 @@ async function addAttendeeToEvent(id, attendee, available) {
     const db = await SQLite.open("./db/database");
 
     const eventId = await db.all(
-            "INSERT INTO attendees_by_date(date_id, attendee, available) VALUES (?, ?, ?)", [id, attendee, available]
+        "INSERT INTO attendees_by_date(date_id, attendee, available) VALUES (?, ?, ?)", [id, attendee, available]
     )
 
     console.log(eventId);
@@ -77,7 +76,7 @@ async function deleteDate(date) {
     const db = await SQLite.open("./db/database");
 
     const eventId = await db.all(
-            "DELETE FROM dates_by_event WHERE event_date = ?", [date]
+        "DELETE FROM dates_by_event WHERE event_date = ?", [date]
     )
 
     console.log(eventId);
@@ -92,7 +91,7 @@ async function deleteEvent(id) {
     const db = await SQLite.open("./db/database");
 
     const eventId = await db.all(
-            "DELETE FROM events WHERE id = ?", [id]
+        "DELETE FROM events WHERE id = ?", [id]
     )
 
     console.log(eventId);
